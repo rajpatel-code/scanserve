@@ -12,8 +12,8 @@ import { useCart } from "../context/CartContext";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-const GST_RATE = 0.18;
-const DELIVERY_FEE = 50;
+const GST_RATE = 0.05;
+const DELIVERY_FEE = 0;
 
 const initialCustomer = {
   fullName: "",
