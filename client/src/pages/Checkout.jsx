@@ -627,7 +627,7 @@ const Checkout = () => {
             </div>
 
             <div className="flex justify-between">
-              <span>GST (18%)</span>
+              <span>GST (5%)</span>
               <span>₹{gst.toFixed(2)}</span>
             </div>
 
