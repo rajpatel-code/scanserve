@@ -1,0 +1,77 @@
+export const restaurant = {
+  name: "Raj Cafe",
+  tagline: "Good Food. Great Mood.",
+  rating: 4.9,
+  reviews: 2300,
+  table: 7,
+
+  popularDishes: [
+    {
+      id: 1,
+      name: "Chicken Burger",
+      price: 249,
+      rating: 4.8,
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600",
+      bestSeller: true,
+    },
+    {
+      id: 2,
+      name: "Farmhouse Pizza",
+      price: 399,
+      rating: 4.9,
+      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600",
+      bestSeller: true,
+    },
+    {
+      id: 3,
+      name: "Cold Coffee",
+      price: 179,
+      rating: 4.7,
+      image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600",
+      bestSeller: false,
+    },
+    {
+      id: 4,
+      name: "White Sauce Pasta",
+      price: 299,
+      rating: 4.8,
+      image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=600",
+      bestSeller: false,
+    },
+  ],
+
+  menu: [
+    {
+      id: 1,
+      name: "Chicken Burger",
+      price: 249,
+      rating: 4.8,
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600",
+      category: "Burger",
+    },
+    {
+      id: 2,
+      name: "Farmhouse Pizza",
+      price: 399,
+      rating: 4.9,
+      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600",
+      category: "Pizza",
+    },
+    {
+      id: 3,
+      name: "Cold Coffee",
+      price: 179,
+      rating: 4.7,
+      image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600",
+      category: "Coffee",
+    },
+    {
+      id: 4,
+      name: "White Sauce Pasta",
+      price: 299,
+      rating: 4.8,
+      image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=600",
+      category: "Pasta",
+    },
+  ],
+};
