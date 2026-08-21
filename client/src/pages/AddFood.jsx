@@ -134,12 +134,12 @@ export default function AddFood() {
         navigate("/admin/menu");
       }, 900);
     } catch (error) {
-      console.error(error);
+  console.error("ADD FOOD ERROR:", error);
 
-      setMessage({
-        type: "error",
-        text: "Failed to save food item. Please try again.",
-      });
+  setMessage({
+    type: "error",
+    text: error?.message || "Failed to save food item.",
+  });
     } finally {
       setLoading(false);
     }
