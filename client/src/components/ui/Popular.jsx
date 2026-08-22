@@ -1,6 +1,38 @@
-import { restaurant } from "../../data/restaurant";
+import { useEffect, useState } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { db } from "../../firebase/firebase";
+import useCart from "../../hooks/useCart";
 
 function Popular() {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+
+  const [menu, setMenu] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "menu"),
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setMenu(data);
+      },
+      (error) => {
+        console.error("Failed to load popular dishes:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const popularDishes = menu
+  .filter((item) => item.available === true && item.featured === true)
+  .slice(0, 4);
+
   return (
     <section className="bg-white py-24">
       <div className="max-w-7xl mx-auto px-6">
@@ -22,15 +54,18 @@ function Popular() {
             </p>
           </div>
 
-          <button className="font-semibold text-orange-500 hover:text-orange-600 transition">
-            See All →
-          </button>
+          <button
+  onClick={() => navigate("/menu")}
+  className="font-semibold text-orange-500 hover:text-orange-600 transition"
+>
+  See All →
+</button>
         </div>
 
         {/* Cards */}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {restaurant.popularDishes.map((item) => (
+          {popularDishes.map((item) => (
             <div
               key={item.id}
               className="group bg-white rounded-[32px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3"
@@ -39,16 +74,14 @@ function Popular() {
 
               <div className="relative overflow-hidden">
                 <img
-                  src={item.image}
+                  src={
+  item.image ||
+  item.imageUrl ||
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800"
+}
                   alt={item.name}
                   className="w-full h-64 object-cover group-hover:scale-110 duration-500"
                 />
-
-                {item.bestSeller && (
-                  <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-semibold px-3 py-2 rounded-full">
-                    🔥 Best Seller
-                  </div>
-                )}
 
                 <button className="absolute top-4 right-4 h-11 w-11 rounded-full bg-white shadow-lg hover:scale-110 transition">
                   ❤️
@@ -75,9 +108,12 @@ function Popular() {
                     ₹{item.price}
                   </h4>
 
-                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-semibold transition">
-                    Add +
-                  </button>
+                  <button
+  onClick={() => addToCart(item)}
+  className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-semibold transition"
+>
+  Add +
+</button>
 
                 </div>
 
