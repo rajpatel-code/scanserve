@@ -5,6 +5,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import Cart from "./pages/Cart";
+import Offers from "./pages/Offers";
+import Reviews from "./pages/Reviews";
+import Contact from "./pages/Contact";
 import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
 import Wishlist from "./pages/Wishlist";
@@ -50,6 +53,12 @@ function App() {
         <Route path="/wishlist" element={<Wishlist />} />
 
         <Route path="/cart" element={<Cart />} />
+
+        <Route path="/offers" element={<Offers />} />
+
+        <Route path="/reviews" element={<Reviews />} />
+
+        <Route path="/contact" element={<Contact />} />
 
         <Route path="/checkout" element={<Checkout />} />
 
