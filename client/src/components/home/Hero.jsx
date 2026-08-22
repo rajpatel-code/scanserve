@@ -1,7 +1,9 @@
 import coffee from "../../assets/coffee.png";
 import { restaurant } from "../../data/restaurant";
+import { useNavigate } from "react-router-dom";
 
 function Hero() {
+   const navigate = useNavigate();
   return (
     <section className="bg-[#FAFAFA] overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 pt-24 pb-24">
@@ -28,13 +30,19 @@ function Hero() {
             </p>
 
             <div className="mt-12 flex gap-5">
-              <button className="bg-orange-500 hover:bg-orange-600 transition duration-300 hover:-translate-y-1 text-white px-8 py-4 rounded-2xl font-semibold shadow-xl shadow-orange-300/40">
-                Explore Menu
-              </button>
+              <button
+  onClick={() => navigate("/menu")}
+  className="bg-orange-500 hover:bg-orange-600 transition duration-300 hover:-translate-y-1 text-white px-8 py-4 rounded-2xl font-semibold shadow-xl shadow-orange-300/40"
+>
+  Explore Menu
+</button>
 
-              <button className="border border-gray-300 bg-white hover:bg-gray-100 transition duration-300 px-8 py-4 rounded-2xl font-semibold">
-                Today's Offer
-              </button>
+              <button
+  onClick={() => navigate("/offers")}
+  className="border border-gray-300 bg-white hover:bg-gray-100 transition duration-300 px-8 py-4 rounded-2xl font-semibold"
+>
+  Today's Offer
+</button>
             </div>
           </div>
 
