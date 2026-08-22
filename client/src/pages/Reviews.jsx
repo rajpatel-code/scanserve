@@ -9,7 +9,7 @@ function Reviews() {
       text: "Amazing food and very quick service!",
     },
     {
-      name: "Aman Sharma",
+      name: "Sumit Agnihotri",
       rating: "★★★★★",
       text: "The burger and coffee were excellent.",
     },

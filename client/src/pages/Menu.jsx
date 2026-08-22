@@ -1,6 +1,6 @@
 import { useCart } from "../context/CartContext";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import {
@@ -26,6 +26,7 @@ const categories = [
 ];
 
 export default function Menu() {
+  const navigate = useNavigate();
   const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -142,13 +143,22 @@ export default function Menu() {
 
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900">Our Menu</h1>
-          <p className="mt-3 text-gray-500">
-            Freshly prepared dishes made with premium ingredients.
-          </p>
-        </div>
+       {/* Header */}
+<div className="relative text-center">
+  <h1 className="text-4xl font-extrabold text-gray-900">Our Menu</h1>
+
+  <p className="mt-3 text-gray-500">
+    Freshly prepared dishes made with premium ingredients.
+  </p>
+
+  <button
+    onClick={() => navigate("/cart")}
+    className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-600 hover:-translate-y-1"
+  >
+    <ShoppingCart className="h-5 w-5" />
+    Go to Cart
+  </button>
+</div>
 
         {/* Featured */}
         {featuredItems.length > 0 && (
