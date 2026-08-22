@@ -11,6 +11,9 @@ import { db } from "../firebase/firebase";
 import { useCart } from "../context/CartContext";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://scanserve-hczb.onrender.com";
 
 const GST_RATE = 0.05;
 const DELIVERY_FEE = 0;
@@ -290,8 +293,9 @@ const Checkout = () => {
     // ------------------------------------------------
 
     const orderRes = await fetch(
-  `${import.meta.env.VITE_API_BASE_URL}/api/payment/create-order`,
-      {
+  `${API_BASE_URL}/api/payment/create-order`,
+{
+      
         method: "POST",
 
         headers: {
@@ -351,8 +355,9 @@ const Checkout = () => {
             // ------------------------------------------
 
             const verifyRes = await fetch(
-  `${import.meta.env.VITE_API_BASE_URL}/api/payment/verify-payment`,
-              {
+  `${API_BASE_URL}/api/payment/verify-payment`,
+{
+              
                 method: "POST",
 
                 headers: {

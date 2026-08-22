@@ -9,7 +9,12 @@ const app = express();
 
 app.use(
   cors({
-    origin: true,
+    origin: [
+      "http://localhost",
+      "https://localhost",
+      "capacitor://localhost",
+      "https://scanserve-hczb.onrender.com",
+    ],
     credentials: true,
   })
 );
