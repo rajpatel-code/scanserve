@@ -19,6 +19,7 @@ function Navbar() {
 
   const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSearch = (e) => {
     if (e.key === "Enter") {
@@ -175,11 +176,66 @@ function Navbar() {
             Order Now
           </button>
 
-          <FiMenu className="text-2xl lg:hidden cursor-pointer" />
+          <button
+  type="button"
+  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+  className="relative z-50 text-2xl lg:hidden cursor-pointer p-2"
+  aria-label="Toggle mobile menu"
+>
+  {mobileMenuOpen ? <FiX /> : <FiMenu />}
+</button>
 
         </div>
 
       </div>
+
+
+{mobileMenuOpen && (
+  <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg">
+    <div className="flex flex-col px-6 py-4 gap-4 font-medium">
+      <NavLink
+        to="/"
+        onClick={() => setMobileMenuOpen(false)}
+        className="text-gray-700 hover:text-orange-500"
+      >
+        Home
+      </NavLink>
+
+      <NavLink
+        to="/menu"
+        onClick={() => setMobileMenuOpen(false)}
+        className="text-gray-700 hover:text-orange-500"
+      >
+        Menu
+      </NavLink>
+
+      <NavLink
+        to="/wishlist"
+        onClick={() => setMobileMenuOpen(false)}
+        className="text-gray-700 hover:text-orange-500"
+      >
+        Wishlist
+      </NavLink>
+
+      <div className="text-gray-700">Offers</div>
+      <div className="text-gray-700">Reviews</div>
+      <div className="text-gray-700">Contact</div>
+
+      <button
+        onClick={() => {
+          setMobileMenuOpen(false);
+          navigate("/menu");
+        }}
+        className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl font-semibold"
+      >
+        Order Now
+      </button>
+    </div>
+  </div>
+)}
+
+
+
 
     </nav>
   );
