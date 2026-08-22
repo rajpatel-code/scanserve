@@ -84,17 +84,38 @@ function Navbar() {
             Wishlist
           </NavLink>
 
-          <li className="text-gray-700 hover:text-orange-500 cursor-pointer">
-            Offers
-          </li>
+          <NavLink
+  to="/offers"
+  className={({ isActive }) =>
+    isActive
+      ? "text-orange-500 font-semibold"
+      : "text-gray-700 hover:text-orange-500 transition"
+  }
+>
+  Offers
+</NavLink>
 
-          <li className="text-gray-700 hover:text-orange-500 cursor-pointer">
-            Reviews
-          </li>
+<NavLink
+  to="/reviews"
+  className={({ isActive }) =>
+    isActive
+      ? "text-orange-500 font-semibold"
+      : "text-gray-700 hover:text-orange-500 transition"
+  }
+>
+  Reviews
+</NavLink>
 
-          <li className="text-gray-700 hover:text-orange-500 cursor-pointer">
-            Contact
-          </li>
+<NavLink
+  to="/contact"
+  className={({ isActive }) =>
+    isActive
+      ? "text-orange-500 font-semibold"
+      : "text-gray-700 hover:text-orange-500 transition"
+  }
+>
+  Contact
+</NavLink>
 
         </ul>
 
@@ -217,9 +238,29 @@ function Navbar() {
         Wishlist
       </NavLink>
 
-      <div className="text-gray-700">Offers</div>
-      <div className="text-gray-700">Reviews</div>
-      <div className="text-gray-700">Contact</div>
+      <NavLink
+  to="/offers"
+  onClick={() => setMobileMenuOpen(false)}
+  className="text-gray-700 hover:text-orange-500"
+>
+  Offers
+</NavLink>
+
+<NavLink
+  to="/reviews"
+  onClick={() => setMobileMenuOpen(false)}
+  className="text-gray-700 hover:text-orange-500"
+>
+  Reviews
+</NavLink>
+
+<NavLink
+  to="/contact"
+  onClick={() => setMobileMenuOpen(false)}
+  className="text-gray-700 hover:text-orange-500"
+>
+  Contact
+</NavLink>
 
       <button
         onClick={() => {
