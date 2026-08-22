@@ -24,7 +24,7 @@ function Contact() {
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             <div>
               <h3 className="font-bold">📞 Phone</h3>
-              <p className="mt-2 text-gray-600">+91 98765 43210</p>
+              <p className="mt-2 text-gray-600">+91 6266574848</p>
             </div>
 
             <div>
