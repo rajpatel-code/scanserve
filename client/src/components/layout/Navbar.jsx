@@ -46,9 +46,7 @@ function Navbar() {
   className="h-14 w-14 object-contain"
 />
 
-<h1 className="text-3xl font-extrabold text-orange-500">
-  Raj Cafe
-</h1>
+
         </div>
 
         {/* Navigation */}
