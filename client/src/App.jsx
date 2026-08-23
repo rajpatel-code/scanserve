@@ -1,5 +1,5 @@
+import AIChatbot from "./components/AIChatbot";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
@@ -123,6 +123,7 @@ function App() {
           element={<NotFound />}
         />
       </Routes>
+      <AIChatbot />
     </BrowserRouter>
   );
 }

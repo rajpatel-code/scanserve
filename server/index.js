@@ -4,17 +4,17 @@ const express = require("express");
 const cors = require("cors");
 
 const paymentRoutes = require("./routes/paymentRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost",
-      "https://localhost",
-      "capacitor://localhost",
-      "https://scanserve-hczb.onrender.com",
-    ],
+ origin: [
+  "http://localhost:5173",
+  "https://scanserve-hczb.onrender.com",
+  "capacitor://localhost",
+],
     credentials: true,
   })
 );
@@ -22,6 +22,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api/payment", paymentRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({
