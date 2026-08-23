@@ -32,22 +32,20 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
 
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
 
         {/* Logo */}
 
         <div
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <img
-  src="/raj-cafe-logo.jpeg"
-  alt="Raj Cafe"
-  className="h-14 w-14 object-contain"
-/>
-
-
-        </div>
+  onClick={() => navigate("/")}
+  className="flex items-center cursor-pointer"
+>
+  <img
+    src="/raj-cafe-logo.png"
+    alt="Raj Cafe"
+    className="h-16 w-16 sm:h-20 sm:w-20 object-contain"
+  />
+</div>
 
         {/* Navigation */}
 
