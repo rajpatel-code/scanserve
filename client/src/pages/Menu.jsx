@@ -28,16 +28,25 @@ const categories = [
 
 export default function Menu() {
   const navigate = useNavigate();
-  const [menu, setMenu] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+const [searchParams] = useSearchParams();
+
+const [menu, setMenu] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+
+const [search, setSearch] = useState(
+  () => searchParams.get("search") || ""
+);
+
+const [selectedCategory, setSelectedCategory] = useState("All");
   const { addToCart } = useCart();
 
 
-  const [searchParams] = useSearchParams();
   const tableNumber = searchParams.get("table");
+  useEffect(() => {
+  const urlSearch = searchParams.get("search") || "";
+  setSearch(urlSearch);
+}, [searchParams]);
 
   useEffect(() => {
     if (tableNumber) {

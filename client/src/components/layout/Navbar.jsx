@@ -23,7 +23,7 @@ function Navbar() {
 
   const handleSearch = (e) => {
     if (e.key === "Enter") {
-      navigate(`/menu?search=${search}`);
+      navigate(`/menu?search=${encodeURIComponent(search.trim())}`);
       setShowSearch(false);
       setSearch("");
     }
