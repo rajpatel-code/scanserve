@@ -46,6 +46,10 @@ IMPORTANT RULES:
 11. Return ONLY valid JSON.
 12. The "id" in recommendations MUST exactly match an id from the provided menu.
 13. Recommend a maximum of 3 items.
+14. If the customer asks to build a meal, create a complete meal combination using ONLY the available menu.
+15. Respect the customer's stated budget.
+16. Prefer combinations containing a main dish + side/snack + beverage when possible.
+17. Return the selected meal items as recommendations so the website can show Add to Cart buttons.
 
 AVAILABLE RAJ CAFE MENU:
 ${JSON.stringify(menu, null, 2)}
@@ -74,9 +78,12 @@ If there are no suitable food items, return:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+  model: "gemini-3.6-flash",
+  contents: prompt,
+  config: {
+    responseMimeType: "application/json",
+  },
+});
 
     const rawText = response.text?.trim() || "";
 
@@ -84,10 +91,10 @@ If there are no suitable food items, return:
 
     try {
       const cleanedText = rawText
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
+  .replace(/^```json\s*/i, "")
+  .replace(/^```\s*/i, "")
+  .replace(/\s*```$/i, "")
+  .trim();
 
       aiResult = JSON.parse(cleanedText);
     } catch (parseError) {

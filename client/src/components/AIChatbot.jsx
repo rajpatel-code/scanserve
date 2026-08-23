@@ -312,6 +312,15 @@ const AIChatbot = () => {
               >
                 🥗 Veg Food
               </button>
+              <button
+  type="button"
+  onClick={() =>
+    setInput("Build a complete meal for me under ₹400")
+  }
+  className="whitespace-nowrap rounded-full bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-100"
+>
+  🍽️ Build My Meal
+</button>
             </div>
 
             {/* Input */}
