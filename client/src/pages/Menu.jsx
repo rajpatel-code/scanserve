@@ -164,7 +164,7 @@ const [selectedCategory, setSelectedCategory] = useState("All");
 </div>
 
         {/* Featured */}
-        {featuredItems.length > 0 && (
+        {!search.trim() && featuredItems.length > 0 && (
           <section className="mt-10">
             <div className="mb-6 flex items-center gap-2">
               <Sparkles className="text-orange-500" />
