@@ -40,11 +40,15 @@ function Navbar() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 cursor-pointer"
         >
-          <h1 className="text-3xl font-extrabold text-orange-500">
-            Raj Cafe
-          </h1>
+          <img
+  src="/raj-cafe-logo.jpeg"
+  alt="Raj Cafe"
+  className="h-14 w-14 object-contain"
+/>
 
-          <span className="text-3xl">☕</span>
+<h1 className="text-3xl font-extrabold text-orange-500">
+  Raj Cafe
+</h1>
         </div>
 
         {/* Navigation */}
