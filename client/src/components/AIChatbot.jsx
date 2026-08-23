@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
-
-import { Bot, MessageCircle, Send, X, Sparkles } from "lucide-react";
+import {
+  Bot,
+  MessageCircle,
+  Send,
+  X,
+  Sparkles,
+  ShoppingCart,
+} from "lucide-react";
+import useCart from "../hooks/useCart";
 
 const AIChatbot = () => {
+  const { addToCart } = useCart();
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [menu, setMenu] = useState([]);
@@ -14,102 +23,122 @@ const AIChatbot = () => {
       id: 1,
       type: "bot",
       text: "Hi! 👋 I'm Raj Cafe AI. How can I help you today?",
+      recommendations: [],
     },
   ]);
 
+  // Load live menu from Firestore
   useEffect(() => {
-  const unsubscribe = onSnapshot(
-    collection(db, "menu"),
-    (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    const unsubscribe = onSnapshot(
+      collection(db, "menu"),
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      const availableMenu = data.filter(
-        (item) => item.available === true
-      );
+        const availableMenu = data.filter(
+          (item) => item.available === true
+        );
 
-      setMenu(availableMenu);
-    },
-    (error) => {
-      console.error("AI Menu Error:", error);
-    }
-  );
+        setMenu(availableMenu);
+      },
+      (error) => {
+        console.error("AI Menu Error:", error);
+      }
+    );
 
-  return () => unsubscribe();
-}, []);
+    return () => unsubscribe();
+  }, []);
 
   const sendMessage = async () => {
-  const text = input.trim();
+    const text = input.trim();
 
-  if (!text) return;
+    if (!text) return;
 
-  const userMessage = {
-    id: Date.now(),
-    type: "user",
-    text,
-  };
+    const userMessage = {
+      id: Date.now(),
+      type: "user",
+      text,
+    };
 
-  setMessages((prev) => [...prev, userMessage]);
-  setInput("");
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
 
-  try {
-    const response = await fetch("https://scanserve-backend.onrender.com/api/ai/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-     body: JSON.stringify({
-  message: text,
-  menu: menu.map((item) => ({
-    id: item.id,
-    name: item.name || item.foodName,
-    category: item.category,
-    price: Number(item.price),
-    description: item.description,
-    featured: item.featured === true,
-    type: item.type,
-    veg: item.veg,
-    isVeg: item.isVeg,
-  })),
-}),
-    });
+    try {
+      const response = await fetch(
+        "https://scanserve-backend.onrender.com/api/ai/chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: text,
 
-    const data = await response.json();
+            menu: menu.map((item) => ({
+              id: item.id,
+              name: item.name || item.foodName,
+              category: item.category,
+              price: Number(item.price),
+              description: item.description,
 
-    if (data.success) {
+              // Important for recommendation cards
+              image:
+                item.image ||
+                item.imageUrl ||
+                item.imageURL ||
+                item.foodImage ||
+                "",
+
+              featured: item.featured === true,
+              type: item.type,
+              veg: item.veg,
+              isVeg: item.isVeg,
+              available: item.available === true,
+            })),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: "bot",
+            text: data.reply,
+            recommendations: data.recommendations || [],
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: "bot",
+            text: "Sorry 😔 I couldn't process your request.",
+            recommendations: [],
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Chatbot Error:", error);
+
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           type: "bot",
-          text: data.reply,
-        },
-      ]);
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          type: "bot",
-          text: "Sorry 😔 I couldn't process your request.",
+          text: "Sorry 😔 AI service is currently unavailable.",
+          recommendations: [],
         },
       ]);
     }
-  } catch (error) {
-    console.error("Chatbot Error:", error);
+  };
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now() + 1,
-        type: "bot",
-        text: "Sorry 😔 AI service is currently unavailable.",
-      },
-    ]);
-  }
-};
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       sendMessage();
@@ -147,6 +176,7 @@ const AIChatbot = () => {
 
               <div>
                 <h3 className="font-bold">Raj Cafe AI</h3>
+
                 <p className="text-xs text-orange-100">
                   Your food assistant
                 </p>
@@ -174,14 +204,80 @@ const AIChatbot = () => {
                     : "justify-start"
                 }`}
               >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                    message.type === "user"
-                      ? "rounded-br-md bg-orange-500 text-white"
-                      : "rounded-bl-md bg-white text-gray-800 shadow-sm"
-                  }`}
-                >
-                  {message.text}
+                <div className="max-w-[88%]">
+                  
+                  {/* Text */}
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm ${
+                      message.type === "user"
+                        ? "rounded-br-md bg-orange-500 text-white"
+                        : "rounded-bl-md bg-white text-gray-800 shadow-sm"
+                    }`}
+                  >
+                    {message.text}
+                  </div>
+
+                  {/* AI Recommendation Cards */}
+                  {message.type === "bot" &&
+                    message.recommendations?.length > 0 && (
+                      <div className="mt-3 space-y-3">
+                        {message.recommendations.map((item) => (
+                          <div
+                            key={item.id}
+                            className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"
+                          >
+                            {/* Food Image */}
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="h-32 w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex h-24 items-center justify-center bg-orange-50 text-4xl">
+                                🍽️
+                              </div>
+                            )}
+
+                            <div className="p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">
+                                    {item.name}
+                                  </h4>
+
+                                  {item.category && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      {item.category}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <span className="whitespace-nowrap font-bold text-orange-600">
+                                  ₹{Number(item.price || 0)}
+                                </span>
+                              </div>
+
+                              {item.reason && (
+                                <p className="mt-2 text-xs text-gray-600">
+                                  ⭐ {item.reason}
+                                </p>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => addToCart(item)}
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 active:scale-[0.98]"
+                              >
+                                <ShoppingCart size={17} />
+                                Add to Cart
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
@@ -190,6 +286,7 @@ const AIChatbot = () => {
           {/* Quick Questions */}
           <div className="border-t bg-white px-4 py-3">
             <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+              
               <button
                 type="button"
                 onClick={() => setInput("What are your best sellers?")}
@@ -200,7 +297,9 @@ const AIChatbot = () => {
 
               <button
                 type="button"
-                onClick={() => setInput("Suggest something under ₹300")}
+                onClick={() =>
+                  setInput("Suggest something under ₹300")
+                }
                 className="whitespace-nowrap rounded-full bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-100"
               >
                 💰 Under ₹300

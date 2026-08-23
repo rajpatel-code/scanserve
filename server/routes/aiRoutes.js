@@ -40,9 +40,12 @@ IMPORTANT RULES:
 5. If the customer asks for food under a budget, respect the budget.
 6. If the customer asks for vegetarian food, recommend only vegetarian items.
 7. If the customer asks for best sellers, prefer featured items.
-8. Keep answers short, friendly and useful.
+8. Keep the reply short and friendly.
 9. You can understand Hindi, Hinglish and English.
-10. If no suitable item exists, clearly tell the customer.
+10. If no suitable item exists, say so clearly.
+11. Return ONLY valid JSON.
+12. The "id" in recommendations MUST exactly match an id from the provided menu.
+13. Recommend a maximum of 3 items.
 
 AVAILABLE RAJ CAFE MENU:
 ${JSON.stringify(menu, null, 2)}
@@ -50,7 +53,24 @@ ${JSON.stringify(menu, null, 2)}
 CUSTOMER MESSAGE:
 ${message}
 
-Give a helpful restaurant recommendation based ONLY on the menu above.
+Return exactly this JSON structure:
+
+{
+  "reply": "Short friendly answer to the customer",
+  "recommendations": [
+    {
+      "id": "exact-menu-item-id",
+      "reason": "short reason"
+    }
+  ]
+}
+
+If there are no suitable food items, return:
+
+{
+  "reply": "Sorry, I couldn't find a suitable item.",
+  "recommendations": []
+}
 `;
 
     const response = await ai.models.generateContent({
@@ -58,9 +78,53 @@ Give a helpful restaurant recommendation based ONLY on the menu above.
       contents: prompt,
     });
 
+    const rawText = response.text?.trim() || "";
+
+    let aiResult;
+
+    try {
+      const cleanedText = rawText
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
+      aiResult = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("AI JSON Parse Error:", parseError);
+      console.error("Raw AI Response:", rawText);
+
+      return res.status(200).json({
+        success: true,
+        reply: rawText,
+        recommendations: [],
+      });
+    }
+
+    const validRecommendations = Array.isArray(aiResult.recommendations)
+      ? aiResult.recommendations
+          .filter((recommendation) =>
+            menu.some((item) => item.id === recommendation.id)
+          )
+          .slice(0, 3)
+          .map((recommendation) => {
+            const item = menu.find(
+              (menuItem) => menuItem.id === recommendation.id
+            );
+
+            return {
+              ...item,
+              reason: recommendation.reason || "Recommended for you",
+            };
+          })
+      : [];
+
     return res.status(200).json({
       success: true,
-      reply: response.text,
+      reply:
+        aiResult.reply ||
+        "Here are some recommendations from Raj Cafe.",
+      recommendations: validRecommendations,
     });
   } catch (error) {
     console.error("AI Error:", error);

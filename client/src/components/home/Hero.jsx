@@ -61,6 +61,11 @@ function Hero() {
               className="absolute w-[540px] object-contain drop-shadow-[0_40px_55px_rgba(0,0,0,0.28)] hover:scale-105 transition-all duration-500 z-10"
             />
 
+<img
+  src="/raj-cafe-logo.webp"
+  alt="Raj Cafe Logo"
+  className="absolute left-1/2 top-[50%] z-30 w-20 -translate-x-1/2 -translate-y-1/2 object-contain"
+/>
             {/* Premium Coffee */}
 
             <div className="absolute top-10 right-0 bg-white/90 backdrop-blur-xl px-5 py-3 rounded-full shadow-2xl border border-gray-100 z-20">
