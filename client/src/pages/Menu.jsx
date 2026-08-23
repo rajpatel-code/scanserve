@@ -1,4 +1,5 @@
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
@@ -32,7 +33,6 @@ export default function Menu() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [wishlist, setWishlist] = useState([]);
   const { addToCart } = useCart();
 
 
@@ -96,13 +96,7 @@ export default function Menu() {
     });
   }, [availableItems, search, selectedCategory]);
 
-  const toggleWishlist = (id) => {
-    setWishlist((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
-    );
-  };
+  const { wishlist, toggleWishlist } = useWishlist();
 
 
   if (loading) {
@@ -287,17 +281,23 @@ export default function Menu() {
                     />
 
                     <button
-                      onClick={() => toggleWishlist(item.id)}
-                      className="absolute right-3 top-3 rounded-full bg-white p-2 shadow transition hover:scale-110"
-                    >
-                      <Heart
-                        className={`h-5 w-5 ${
-                          wishlist.includes(item.id)
-                            ? "fill-red-500 text-red-500"
-                            : "text-gray-500"
-                        }`}
-                      />
-                    </button>
+  type="button"
+  onClick={() => toggleWishlist(item)}
+  className="absolute right-3 top-3 rounded-full bg-white p-2 shadow transition hover:scale-110"
+  aria-label={
+    wishlist.some((wishItem) => wishItem.id === item.id)
+      ? "Remove from wishlist"
+      : "Add to wishlist"
+  }
+>
+  <Heart
+    className={`h-5 w-5 ${
+      wishlist.some((wishItem) => wishItem.id === item.id)
+        ? "fill-red-500 text-red-500"
+        : "text-gray-500"
+    }`}
+  />
+</button>
 
                     {item.featured && (
                       <span className="absolute left-3 top-3 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold text-white">
