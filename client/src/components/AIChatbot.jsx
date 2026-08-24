@@ -95,10 +95,16 @@ const startVoiceOrdering = () => {
   };
 
   recognition.onresult = (event) => {
-    const spokenText = event.results[0][0].transcript;
+  const spokenText = event.results[0][0].transcript.trim();
 
-    setInput(spokenText);
-  };
+  if (!spokenText) return;
+
+  setInput(spokenText);
+
+  setTimeout(() => {
+    sendMessage(spokenText);
+  }, 300);
+};
 
   recognition.onerror = (event) => {
     console.error("Voice recognition error:", event.error);
@@ -112,10 +118,10 @@ const startVoiceOrdering = () => {
   recognition.start();
 };
 
-  const sendMessage = async () => {
-    const text = input.trim();
+  const sendMessage = async (messageText = input) => {
+  const text = messageText.trim();
 
-    if (!text || loading) return;
+  if (!text || loading) return;
 
   setLoading(true);
 
