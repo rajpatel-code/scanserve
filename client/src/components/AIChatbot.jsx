@@ -8,6 +8,7 @@ import {
   X,
   Sparkles,
   ShoppingCart,
+  Mic,
 } from "lucide-react";
 import useCart from "../hooks/useCart";
 
@@ -17,6 +18,7 @@ const AIChatbot = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [menu, setMenu] = useState([]);
+  const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState([
@@ -73,6 +75,42 @@ const addAllToCart = (items) => {
   });
 };
 
+const startVoiceOrdering = () => {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Voice ordering is not supported in this browser.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "en-IN";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    setIsListening(true);
+  };
+
+  recognition.onresult = (event) => {
+    const spokenText = event.results[0][0].transcript;
+
+    setInput(spokenText);
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Voice recognition error:", event.error);
+    setIsListening(false);
+  };
+
+  recognition.onend = () => {
+    setIsListening(false);
+  };
+
+  recognition.start();
+};
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -452,6 +490,19 @@ if (!response.ok) {
                 placeholder="Ask Raj Cafe AI..."
                 className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm outline-none"
               />
+              <button
+  type="button"
+  onClick={startVoiceOrdering}
+  disabled={loading}
+  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+    isListening
+      ? "bg-red-500 text-white animate-pulse"
+      : "bg-orange-100 text-orange-600 hover:bg-orange-200"
+  }`}
+  aria-label={isListening ? "Listening" : "Start voice ordering"}
+>
+  <Mic size={20} />
+</button>
 
               <button
   type="button"
