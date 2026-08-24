@@ -6,7 +6,216 @@ const router = express.Router();
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+const getLocalResponse = (message, menu = []) => {
+  const text = String(message || "").toLowerCase().trim();
 
+  if (!text || !Array.isArray(menu) || menu.length === 0) {
+    return null;
+  }
+
+  const getPrice = (item) => Number(item.price) || 0;
+
+  const isVegetarian = (item) =>
+    item.veg === true ||
+    item.isVeg === true ||
+    String(item.veg).toLowerCase() === "true" ||
+    String(item.isVeg).toLowerCase() === "true";
+
+  const isFeatured = (item) =>
+    item.featured === true ||
+    String(item.featured).toLowerCase() === "true";
+
+  const getQuantity = () => {
+    const match = text.match(/\b(\d+)\b/);
+    return match ? Math.max(1, Number(match[1])) : 1;
+  };
+
+  const quantity = getQuantity();
+
+  // 🥗 VEGETARIAN FOOD
+  if (
+    text.includes("vegetarian") ||
+    text.includes("veg food") ||
+    text.includes("veg") ||
+    text.includes("vegetarian food")
+  ) {
+    const items = menu
+      .filter(isVegetarian)
+      .slice(0, 3);
+
+    return {
+      reply:
+        items.length > 0
+          ? "Here are some delicious vegetarian options from Raj Cafe! 🥗"
+          : "Sorry, I couldn't find vegetarian items in the menu.",
+      recommendations: items.map((item) => ({
+        ...item,
+        quantity: 1,
+        reason: "Vegetarian choice",
+      })),
+    };
+  }
+
+  // ⭐ BEST SELLERS
+  if (
+    text.includes("best seller") ||
+    text.includes("best sellers") ||
+    text.includes("bestseller") ||
+    text.includes("popular")
+  ) {
+    const items = menu
+      .filter(isFeatured)
+      .slice(0, 3);
+
+    if (items.length > 0) {
+      return {
+        reply: "Here are Raj Cafe's best sellers! ⭐",
+        recommendations: items.map((item) => ({
+          ...item,
+          quantity: 1,
+          reason: "Popular Raj Cafe favorite",
+        })),
+      };
+    }
+  }
+
+  // 💰 UNDER BUDGET
+  const budgetMatch = text.match(
+    /(?:under|below|within|upto|up to|₹|rs\.?|rupees)\s*(?:₹|rs\.?)?\s*(\d+)/i
+  );
+
+  if (budgetMatch) {
+    const budget = Number(budgetMatch[1]);
+
+    if (budget > 0) {
+      const items = menu
+        .filter((item) => getPrice(item) <= budget)
+        .sort((a, b) => {
+          if (isFeatured(b) !== isFeatured(a)) {
+            return isFeatured(b) ? 1 : -1;
+          }
+
+          return getPrice(b) - getPrice(a);
+        })
+        .slice(0, 3);
+
+      return {
+        reply:
+          items.length > 0
+            ? `Here are some great options under ₹${budget}! 💰`
+            : `Sorry, I couldn't find anything under ₹${budget}.`,
+        recommendations: items.map((item) => ({
+          ...item,
+          quantity: 1,
+          reason: `Fits your ₹${budget} budget`,
+        })),
+      };
+    }
+  }
+
+  // 🥤 COLD DRINK / SOFT DRINK
+  if (
+    text.includes("cold drink") ||
+    text.includes("cold drinks") ||
+    text.includes("soft drink") ||
+    text.includes("coke") ||
+    text.includes("cola")
+  ) {
+    const items = menu
+      .filter((item) => {
+        const name = String(
+          item.name || item.foodName || ""
+        ).toLowerCase();
+
+        const category = String(
+          item.category || ""
+        ).toLowerCase();
+
+        return (
+          name.includes("cold drink") ||
+          name.includes("coke") ||
+          name.includes("cola") ||
+          category.includes("beverage")
+        );
+      })
+      .slice(0, 3);
+
+    if (items.length > 0) {
+      return {
+        reply: `Sure! Maine ${quantity} chilled cold drink${
+          quantity > 1 ? "s" : ""
+        } add karne ke liye select kar di${
+          quantity > 1 ? " hain" : " hai"
+        }. 🥤`,
+        recommendations: items.map((item) => ({
+          ...item,
+          quantity,
+          reason: "Refreshing drink for your order",
+        })),
+      };
+    }
+  }
+
+  // 🍔 SIMPLE FOOD SEARCH
+  const foodKeywords = [
+    "burger",
+    "pizza",
+    "naan",
+    "pasta",
+    "sandwich",
+    "biryani",
+    "tikka",
+    "paneer",
+    "fries",
+    "samosa",
+    "dal",
+    "rice",
+    "coffee",
+    "tea",
+    "juice",
+    "shake",
+    "dessert",
+    "cake",
+    "ice cream",
+  ];
+
+  const matchedKeyword = foodKeywords.find((keyword) =>
+    text.includes(keyword)
+  );
+
+  if (matchedKeyword) {
+    const items = menu
+      .filter((item) => {
+        const name = String(
+          item.name || item.foodName || ""
+        ).toLowerCase();
+
+        const category = String(
+          item.category || ""
+        ).toLowerCase();
+
+        return (
+          name.includes(matchedKeyword) ||
+          category.includes(matchedKeyword)
+        );
+      })
+      .slice(0, 3);
+
+    if (items.length > 0) {
+      return {
+        reply: `Sure! Ye ${matchedKeyword} options menu mein available hain. 🍽️`,
+        recommendations: items.map((item) => ({
+          ...item,
+          quantity,
+          reason: `Matches your ${matchedKeyword} request`,
+        })),
+      };
+    }
+  }
+
+  // ❌ Not a simple command → Gemini will handle it
+  return null;
+};
 console.log(
   "Gemini API Key loaded:",
   process.env.GEMINI_API_KEY ? "YES" : "NO"
@@ -35,7 +244,14 @@ const people = getPeopleFromText(message);
         message: "Message is required",
       });
     }
+const localResponse = getLocalResponse(message, menu);
 
+if (localResponse) {
+  return res.status(200).json({
+    success: true,
+    ...localResponse,
+  });
+}
     const prompt = `
 You are Raj Cafe AI, a friendly food assistant for Raj Cafe.
 
@@ -210,14 +426,54 @@ if (budget !== null && validRecommendations.length > 0) {
         "Here are some recommendations from Raj Cafe.",
       recommendations: validRecommendations,
     });
-  } catch (error) {
-    console.error("AI Error:", error);
+} catch (error) {
+  console.error("AI Error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "AI service is currently unavailable",
+  const isQuotaError =
+    error?.status === 429 ||
+    error?.code === 429 ||
+    String(error?.message || "").includes("429") ||
+    String(error?.message || "").toLowerCase().includes("quota");
+
+  // Gemini quota exceeded → use local fallback
+  if (isQuotaError) {
+    console.log("Gemini quota exceeded. Using local fallback.");
+
+    const fallbackResponse = getLocalResponse(message, menu);
+
+    if (fallbackResponse) {
+      return res.status(200).json({
+        success: true,
+        ...fallbackResponse,
+        fallback: true,
+      });
+    }
+
+    // Generic safe fallback using only menu items
+    const fallbackItems = Array.isArray(menu)
+      ? menu
+          .filter((item) => item?.id && item?.name)
+          .slice(0, 3)
+      : [];
+
+    return res.status(200).json({
+      success: true,
+      reply:
+        "Gemini is temporarily unavailable, but here are some items you can try from our menu.",
+      recommendations: fallbackItems.map((item) => ({
+        ...item,
+        quantity: 1,
+        reason: "Available from Raj Cafe menu",
+      })),
+      fallback: true,
     });
   }
+
+  return res.status(500).json({
+    success: false,
+    message: "AI service is currently unavailable",
+  });
+}
 });
 
 module.exports = router;
