@@ -45,11 +45,18 @@ IMPORTANT RULES:
 10. If no suitable item exists, say so clearly.
 11. Return ONLY valid JSON.
 12. The "id" in recommendations MUST exactly match an id from the provided menu.
-13. Recommend a maximum of 3 items.
+13. Recommend a maximum of 3 different menu items.
 14. If the customer asks to build a meal, create a complete meal combination using ONLY the available menu.
 15. Respect the customer's stated budget.
-16. Prefer combinations containing a main dish + side/snack + beverage when possible.
-17. Return the selected meal items as recommendations so the website can show Add to Cart buttons.
+16. If the customer mentions a number of people, you MUST use that number when planning the meal quantities.
+17. Each recommendation MUST include a positive integer quantity.
+18. If the customer says "for 2 people", the meal must provide suitable portions for 2 people. Do NOT automatically use quantity 1 for every item.
+19. For multiple people, increase the quantity of suitable shareable or individual items as needed. For example, for 2 people, quantity may be 2 for naan, beverages, snacks, or other individual items when appropriate.
+20. If the stated budget is not enough to give quantity equal to the number of people for every item, choose a practical shared meal combination that serves the requested number of people while staying within the budget.
+21. NEVER ignore the customer's number of people.
+22. The quantity must be included in the recommendation JSON and must be a positive integer.
+23. Never invent quantity, price, name, image or id. Use only information available in the provided menu.
+24. The recommendation id MUST exactly match an id from the provided menu.
 
 AVAILABLE RAJ CAFE MENU:
 ${JSON.stringify(menu, null, 2)}
@@ -63,9 +70,10 @@ Return exactly this JSON structure:
   "reply": "Short friendly answer to the customer",
   "recommendations": [
     {
-      "id": "exact-menu-item-id",
-      "reason": "short reason"
-    }
+  "id": "exact-menu-item-id",
+  "quantity": 1,
+  "reason": "short reason"
+}
   ]
 }
 
@@ -78,7 +86,7 @@ If there are no suitable food items, return:
 `;
 
     const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
+  model: "gemini-3.5-flash",
   contents: prompt,
   config: {
     responseMimeType: "application/json",
@@ -120,9 +128,10 @@ If there are no suitable food items, return:
             );
 
             return {
-              ...item,
-              reason: recommendation.reason || "Recommended for you",
-            };
+  ...item,
+  quantity: Math.max(1, Number(recommendation.quantity) || 1),
+  reason: recommendation.reason || "Recommended for you",
+};
           })
       : [];
 

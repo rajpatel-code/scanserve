@@ -36,32 +36,67 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems]);
 
-  const addToCart = useCallback((item) => {
-    if (!item || item.id === undefined || item.id === null) return;
+  const addToCart = useCallback((item, quantity = 1) => {
+  if (!item || item.id === undefined || item.id === null) return;
 
-    setCartItems((prev) => {
-      const existingItem = prev.find((cartItem) => cartItem.id === item.id);
+  const quantityToAdd = Math.max(1, Number(quantity) || 1);
 
-      if (existingItem) {
-        return prev.map((cartItem) =>
-          cartItem.id === item.id
-            ? {
-                ...cartItem,
-                quantity: cartItem.quantity + 1,
-              }
-            : cartItem
-        );
-      }
+  setCartItems((prev) => {
+    const existingItem = prev.find(
+      (cartItem) => cartItem.id === item.id
+    );
 
-      return [
-        ...prev,
-        {
-          ...item,
-          quantity: 1,
-        },
-      ];
-    });
-  }, []);
+    if (existingItem) {
+      return prev.map((cartItem) =>
+        cartItem.id === item.id
+          ? {
+              ...cartItem,
+              quantity: cartItem.quantity + quantityToAdd,
+            }
+          : cartItem
+      );
+    }
+
+    return [
+      ...prev,
+      {
+        ...item,
+        quantity: quantityToAdd,
+      },
+    ];
+  });
+}, []);
+
+const addToCartWithQuantity = useCallback((item, quantity = 1) => {
+  if (!item || item.id === undefined || item.id === null) return;
+
+  const qty = Math.max(1, Number(quantity) || 1);
+
+  setCartItems((prev) => {
+    const existingItem = prev.find(
+      (cartItem) => cartItem.id === item.id
+    );
+
+    if (existingItem) {
+      return prev.map((cartItem) =>
+        cartItem.id === item.id
+          ? {
+              ...cartItem,
+              quantity: cartItem.quantity + qty,
+            }
+          : cartItem
+      );
+    }
+
+    return [
+      ...prev,
+      {
+        ...item,
+        quantity: qty,
+      },
+    ];
+  });
+}, []);
 
   const removeFromCart = useCallback((id) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
@@ -172,6 +207,7 @@ export const CartProvider = ({ children }) => {
       cartItems,
 
       addToCart,
+      addToCartWithQuantity,
       removeFromCart,
       updateQuantity,
       increaseQuantity,
@@ -193,6 +229,7 @@ export const CartProvider = ({ children }) => {
     [
       cartItems,
       addToCart,
+      addToCartWithQuantity,
       removeFromCart,
       updateQuantity,
       increaseQuantity,

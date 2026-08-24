@@ -17,6 +17,7 @@ const AIChatbot = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [menu, setMenu] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState([
     {
@@ -51,10 +52,34 @@ const AIChatbot = () => {
     return () => unsubscribe();
   }, []);
 
+const getBudgetFromText = (text) => {
+  const match = text.match(/₹\s?(\d+)/);
+  return match ? Number(match[1]) : null;
+};
+
+const addItemToCartWithQuantity = (item) => {
+  if (!item) return;
+
+  const quantity = Math.max(1, Number(item.quantity) || 1);
+
+  addToCart(item, quantity);
+};
+
+const addAllToCart = (items) => {
+  if (!items || items.length === 0) return;
+
+  items.forEach((item) => {
+    addItemToCartWithQuantity(item);
+  });
+};
+
+
   const sendMessage = async () => {
     const text = input.trim();
 
-    if (!text) return;
+    if (!text || loading) return;
+
+  setLoading(true);
 
     const userMessage = {
       id: Date.now(),
@@ -100,7 +125,9 @@ const AIChatbot = () => {
           }),
         }
       );
-
+if (!response.ok) {
+  throw new Error(`AI API error: ${response.status}`);
+}
       const data = await response.json();
 
       if (data.success) {
@@ -137,6 +164,9 @@ const AIChatbot = () => {
         },
       ]);
     }
+    finally {
+  setLoading(false);
+}
   };
 
   const handleKeyDown = (e) => {
@@ -219,8 +249,30 @@ const AIChatbot = () => {
 
                   {/* AI Recommendation Cards */}
                   {message.type === "bot" &&
-                    message.recommendations?.length > 0 && (
-                      <div className="mt-3 space-y-3">
+  message.recommendations?.length > 0 && (() => {
+    const recommendedItems = message.recommendations;
+
+    const mealTotal = recommendedItems.reduce(
+  (sum, item) =>
+    sum +
+    Number(item.price || 0) * Math.max(1, Number(item.quantity) || 1),
+  0
+);
+
+    const budget = getBudgetFromText(
+      messages
+        .slice(0, messages.indexOf(message) + 1)
+        .filter((m) => m.type === "user")
+        .pop()?.text || ""
+    );
+
+    const remaining = budget !== null
+      ? budget - mealTotal
+      : null;
+
+    return (
+      <div className="mt-3 space-y-3">
+                      
                         {message.recommendations.map((item) => (
                           <div
                             key={item.id}
@@ -254,9 +306,17 @@ const AIChatbot = () => {
                                   )}
                                 </div>
 
-                                <span className="whitespace-nowrap font-bold text-orange-600">
-                                  ₹{Number(item.price || 0)}
-                                </span>
+                                <div className="text-right">
+  <span className="whitespace-nowrap font-bold text-orange-600">
+    ₹{Number(item.price || 0)}
+  </span>
+
+  {Number(item.quantity) > 1 && (
+    <p className="mt-1 text-xs font-medium text-gray-500">
+      × {item.quantity}
+    </p>
+  )}
+</div>
                               </div>
 
                               {item.reason && (
@@ -267,7 +327,7 @@ const AIChatbot = () => {
 
                               <button
                                 type="button"
-                                onClick={() => addToCart(item)}
+                                onClick={() => addItemToCartWithQuantity(item)}
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 active:scale-[0.98]"
                               >
                                 <ShoppingCart size={17} />
@@ -276,12 +336,55 @@ const AIChatbot = () => {
                             </div>
                           </div>
                         ))}
+                        {loading && (
+  <div className="flex justify-start">
+    <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-gray-500 shadow-sm">
+      Raj Cafe AI is thinking... 🤔
+    </div>
+  </div>
+)}
+
+                        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-xs text-gray-500">AI Selected Meal</p>
+      <p className="text-lg font-bold text-gray-900">
+        ₹{mealTotal}
+      </p>
+    </div>
+
+    {remaining !== null && (
+      <div className="text-right">
+        <p className="text-xs text-gray-500">Budget Remaining</p>
+        <p
+          className={`font-bold ${
+            remaining >= 0 ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {remaining >= 0
+            ? `₹${remaining} left`
+            : `₹${Math.abs(remaining)} over`}
+        </p>
+      </div>
+    )}
+  </div>
+
+                <button
+                 type="button"
+                   onClick={() => addAllToCart(recommendedItems)}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-semibold text-white"
+                             >
+                      <ShoppingCart size={18} />
+                     Add All to Cart
+                    </button>
                       </div>
-                    )}
-                </div>
-              </div>
-            ))}
-          </div>
+                      </div>
+                       );
+})()}
+                       </div>
+                        </div>
+                          ))}
+                        </div>
 
           {/* Quick Questions */}
           <div className="border-t bg-white px-4 py-3">
@@ -321,6 +424,17 @@ const AIChatbot = () => {
 >
   🍽️ Build My Meal
 </button>
+<button
+  type="button"
+  onClick={() =>
+    setInput(
+      "🎯 Find my taste. Ask me what kind of food I like and then recommend the best matching items from the menu."
+    )
+  }
+  className="whitespace-nowrap rounded-full bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-100"
+>
+  🎯 Find My Taste
+</button>
             </div>
 
             {/* Input */}
@@ -340,13 +454,16 @@ const AIChatbot = () => {
               />
 
               <button
-                type="button"
-                onClick={sendMessage}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white transition hover:bg-orange-600"
-                aria-label="Send message"
-              >
-                <Send size={18} />
-              </button>
+  type="button"
+  onClick={sendMessage}
+  disabled={loading}
+  className={`flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white transition hover:bg-orange-600 ${
+    loading ? "cursor-not-allowed opacity-60" : ""
+  }`}
+  aria-label="Send message"
+>
+  <Send size={18} />
+</button>
             </div>
           </div>
         </div>
