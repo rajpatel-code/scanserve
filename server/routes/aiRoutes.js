@@ -11,10 +11,23 @@ console.log(
   "Gemini API Key loaded:",
   process.env.GEMINI_API_KEY ? "YES" : "NO"
 );
+const getBudgetFromText = (text) => {
+  const match = text.match(/(?:₹|rs\.?|rupees?)\s*(\d+)/i);
+  return match ? Number(match[1]) : null;
+};
 
+const getPeopleFromText = (text) => {
+  const match = text.match(
+    /(\d+)\s*(?:people|person|persons|log|logo|members|pax)/i
+  );
+
+  return match ? Number(match[1]) : null;
+};
 router.post("/chat", async (req, res) => {
   try {
     const { message, menu = [] } = req.body;
+    const budget = getBudgetFromText(message);
+const people = getPeopleFromText(message);
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -57,9 +70,27 @@ IMPORTANT RULES:
 22. The quantity must be included in the recommendation JSON and must be a positive integer.
 23. Never invent quantity, price, name, image or id. Use only information available in the provided menu.
 24. The recommendation id MUST exactly match an id from the provided menu.
+25. When planning a meal, use the detected customer budget if available.
+26. When planning a meal, use the detected number of people if available.
+27. Detected customer budget:
+₹${budget ?? "Not specified"}
+28. Detected number of people:
+${people ?? "Not specified"}
+29. If a number of people is specified, quantities must be planned for that many people.
+30. For a meal request, prioritize a practical combination of main course + side/snack + beverage when those categories exist in the menu.
+31. Do not simply return the first three cheapest items.
+32. Choose quantities based on whether an item is an individual serving or a shareable item.
+33. The estimated meal subtotal must not exceed the detected budget when a budget is specified, unless no feasible combination exists.
+34. If no feasible combination exists within the budget, clearly explain that in the reply and return the closest practical combination from the available menu.
+35. Never create more than 3 different menu item IDs.
+36. The final recommendations must contain the actual menu item IDs and quantities.
 
 AVAILABLE RAJ CAFE MENU:
 ${JSON.stringify(menu, null, 2)}
+DETECTED MEAL REQUIREMENTS:
+
+Budget: ₹${budget ?? "Not specified"}
+People: ${people ?? "Not specified"}
 
 CUSTOMER MESSAGE:
 ${message}
@@ -116,24 +147,61 @@ If there are no suitable food items, return:
       });
     }
 
-    const validRecommendations = Array.isArray(aiResult.recommendations)
-      ? aiResult.recommendations
-          .filter((recommendation) =>
-            menu.some((item) => item.id === recommendation.id)
-          )
-          .slice(0, 3)
-          .map((recommendation) => {
-            const item = menu.find(
-              (menuItem) => menuItem.id === recommendation.id
-            );
+    let validRecommendations = Array.isArray(aiResult.recommendations)
+  ? aiResult.recommendations
+      .filter((recommendation) =>
+        menu.some((item) => item.id === recommendation.id)
+      )
+      .slice(0, 3)
+      .map((recommendation) => {
+        const item = menu.find(
+          (menuItem) => menuItem.id === recommendation.id
+        );
 
-            return {
-  ...item,
-  quantity: Math.max(1, Number(recommendation.quantity) || 1),
-  reason: recommendation.reason || "Recommended for you",
-};
-          })
-      : [];
+        return {
+          ...item,
+          quantity: Math.max(
+            1,
+            Math.floor(Number(recommendation.quantity) || 1)
+          ),
+          reason:
+            recommendation.reason || "Recommended for you",
+        };
+      })
+  : [];
+
+// -----------------------------------------
+// BACKEND BUDGET VALIDATION
+// -----------------------------------------
+
+if (budget !== null && validRecommendations.length > 0) {
+  let runningTotal = 0;
+
+  validRecommendations = validRecommendations
+    .map((item) => {
+      const price = Number(item.price) || 0;
+      let quantity = item.quantity;
+
+      while (
+        quantity > 0 &&
+        runningTotal + price * quantity > budget
+      ) {
+        quantity--;
+      }
+
+      if (quantity > 0) {
+        runningTotal += price * quantity;
+
+        return {
+          ...item,
+          quantity,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+}
 
     return res.status(200).json({
       success: true,
