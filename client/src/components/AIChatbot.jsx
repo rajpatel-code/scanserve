@@ -10,12 +10,10 @@ import {
   ShoppingCart,
   Mic,
 } from "lucide-react";
-import useCart from "../hooks/useCart";
 import { useCart } from "../context/CartContext";
 const AIChatbot = () => {
   const { addToCartWithQuantity } = useCart();
   const { addToCart } = useCart();
-
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [menu, setMenu] = useState([]);
@@ -118,8 +116,9 @@ const startVoiceOrdering = () => {
   recognition.start();
 };
 
-  const sendMessage = async (messageText = input) => {
-  const text = messageText.trim();
+ const sendMessage = async (messageText) => {
+  const text =
+    typeof messageText === "string" ? messageText.trim() : input.trim();
 
   if (!text || loading) return;
 
@@ -525,7 +524,7 @@ if (!response.ok) {
 
               <button
   type="button"
-  onClick={sendMessage}
+  onClick={() => sendMessage()}
   disabled={loading}
   className={`flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white transition hover:bg-orange-600 ${
     loading ? "cursor-not-allowed opacity-60" : ""
