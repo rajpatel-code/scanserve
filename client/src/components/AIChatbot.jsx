@@ -11,8 +11,9 @@ import {
   Mic,
 } from "lucide-react";
 import useCart from "../hooks/useCart";
-
+import { useCart } from "../context/CartContext";
 const AIChatbot = () => {
+  const { addToCartWithQuantity } = useCart();
   const { addToCart } = useCart();
 
   const [open, setOpen] = useState(false);
@@ -20,7 +21,7 @@ const AIChatbot = () => {
   const [menu, setMenu] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
-
+const [isVoiceOrdering, setIsVoiceOrdering] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -94,11 +95,10 @@ const startVoiceOrdering = () => {
     setIsListening(true);
   };
 
-  recognition.onresult = (event) => {
-  const spokenText = event.results[0][0].transcript.trim();
+ recognition.onresult = (event) => {
+  const spokenText = event.results[0][0].transcript;
 
-  if (!spokenText) return;
-
+  setIsVoiceOrdering(true);
   setInput(spokenText);
 
   setTimeout(() => {
@@ -173,6 +173,19 @@ if (!response.ok) {
   throw new Error(`AI API error: ${response.status}`);
 }
       const data = await response.json();
+
+      if (
+  isVoiceOrdering &&
+  data.success &&
+  Array.isArray(data.recommendations)
+) {
+  data.recommendations.forEach((item) => {
+    addToCartWithQuantity(item, item.quantity || 1);
+  });
+
+  setIsVoiceOrdering(false);
+}
+     
 
       if (data.success) {
         setMessages((prev) => [
