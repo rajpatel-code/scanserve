@@ -227,7 +227,7 @@ const getBudgetFromText = (text) => {
 
 const getPeopleFromText = (text) => {
   const match = text.match(
-    /(\d+)\s*(?:people|person|persons|log|logo|members|pax)/i
+    /(\d+)\s*(?:people|person|persons|log|members|pax)/i
   );
 
   return match ? Number(match[1]) : null;
@@ -244,14 +244,7 @@ const people = getPeopleFromText(message);
         message: "Message is required",
       });
     }
-const localResponse = getLocalResponse(message, menu);
 
-if (localResponse) {
-  return res.status(200).json({
-    success: true,
-    ...localResponse,
-  });
-}
     const prompt = `
 You are Raj Cafe AI, a friendly food assistant for Raj Cafe.
 
@@ -274,7 +267,7 @@ IMPORTANT RULES:
 10. If no suitable item exists, say so clearly.
 11. Return ONLY valid JSON.
 12. The "id" in recommendations MUST exactly match an id from the provided menu.
-13. Recommend a maximum of 3 different menu items.
+13. Recommend a maximum of 3 different menu items. For specific item requests, the maximum of 3 items rule does not mean you should add extra items. Return only the specifically requested items.
 14. If the customer asks to build a meal, create a complete meal combination using ONLY the available menu.
 15. Respect the customer's stated budget.
 16. If the customer mentions a number of people, you MUST use that number when planning the meal quantities.
@@ -300,6 +293,36 @@ ${people ?? "Not specified"}
 34. If no feasible combination exists within the budget, clearly explain that in the reply and return the closest practical combination from the available menu.
 35. Never create more than 3 different menu item IDs.
 36. The final recommendations must contain the actual menu item IDs and quantities.
+37. SPECIFIC ITEM REQUEST HAS HIGHEST PRIORITY.
+
+38. If the customer explicitly names a specific food or drink item, recommend ONLY that exact matching menu item unless the customer explicitly asks for additional items.
+
+39. If the customer says "2 cold drink", "2 cold drinks", "2 cold drink add karo", or similar, return ONLY the exact menu item matching "Cold Drink" with quantity 2.
+
+40. NEVER substitute, add, or recommend similar items when the customer explicitly names a specific item.
+
+41. For a specific item request, do NOT recommend other items from the same category.
+
+42. If the customer asks for multiple specific items, return ONLY those specifically requested items with their requested quantities.
+
+43. Extract the requested quantity from the customer's message and apply it ONLY to the matching requested item.
+
+44. If the requested item does not exist in the provided menu, clearly say that the item is not available. Do NOT substitute another item.
+
+45. General recommendation requests such as "suggest something", "best food", "show vegetarian food", or "what should I eat" may return up to 3 suitable items.
+
+46. A request containing a specific menu item name must NEVER be treated as a general recommendation request.
+
+47. Example:
+Customer: "2 cold drink add karo"
+Correct: Cold Drink × 2
+Incorrect: Cold Drink × 2 + Sweet Curd Lassi × 2 + Watermelon Juice × 2
+
+48. The quantity of a recommendation must represent the customer's requested quantity when a specific item is requested. Do not apply that quantity to unrelated items.
+
+49. If the customer asks to "add", "order", or "give" a specific item, treat it as a direct item-selection request, not a general recommendation request.
+
+50. When a specific item is requested, return the exact matching menu item ID from the provided menu and its requested quantity.
 
 AVAILABLE RAJ CAFE MENU:
 ${JSON.stringify(menu, null, 2)}
@@ -356,11 +379,6 @@ If there are no suitable food items, return:
       console.error("AI JSON Parse Error:", parseError);
       console.error("Raw AI Response:", rawText);
 
-      return res.status(200).json({
-        success: true,
-        reply: rawText,
-        recommendations: [],
-      });
     }
 
     let validRecommendations = Array.isArray(aiResult.recommendations)
@@ -385,12 +403,64 @@ If there are no suitable food items, return:
         };
       })
   : [];
+// -----------------------------------------
+// SPECIFIC ITEM REQUEST GUARD
+// -----------------------------------------
 
+const normalizeText = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+const normalizedMessage = normalizeText(message);
+
+const quantityMatch = normalizedMessage.match(/\b(\d+)\b/);
+const requestedQuantity = quantityMatch
+  ? Math.max(1, Number(quantityMatch[1]))
+  : 1;
+
+const exactRequestedItem = [...menu]
+  .filter((item) => item?.id && item?.name)
+  .sort(
+    (a, b) =>
+      normalizeText(b.name).length -
+      normalizeText(a.name).length
+  )
+  .find((item) => {
+    const itemName = normalizeText(item.name);
+    const itemNamePlural = itemName.endsWith("s")
+  ? itemName
+  : `${itemName}s`;
+
+   const namesToMatch = [itemName, itemNamePlural];
+
+return namesToMatch.some((name) =>
+  normalizedMessage === name ||
+  normalizedMessage.includes(` ${name} `) ||
+  normalizedMessage.startsWith(`${name} `) ||
+  normalizedMessage.endsWith(` ${name}`)
+);
+  });
+
+if (exactRequestedItem) {
+  validRecommendations = [
+    {
+      ...exactRequestedItem,
+      quantity: requestedQuantity,
+      reason: "Requested item",
+    },
+  ];
+}
 // -----------------------------------------
 // BACKEND BUDGET VALIDATION
 // -----------------------------------------
 
-if (budget !== null && validRecommendations.length > 0) {
+if (
+  !exactRequestedItem &&
+  budget !== null &&
+  validRecommendations.length > 0
+) {
   let runningTotal = 0;
 
   validRecommendations = validRecommendations
@@ -426,6 +496,7 @@ if (budget !== null && validRecommendations.length > 0) {
         "Here are some recommendations from Raj Cafe.",
       recommendations: validRecommendations,
     });
+
 } catch (error) {
   console.error("AI Error:", error);
 
@@ -434,40 +505,6 @@ if (budget !== null && validRecommendations.length > 0) {
     error?.code === 429 ||
     String(error?.message || "").includes("429") ||
     String(error?.message || "").toLowerCase().includes("quota");
-
-  // Gemini quota exceeded → use local fallback
-  if (isQuotaError) {
-    console.log("Gemini quota exceeded. Using local fallback.");
-
-    const fallbackResponse = getLocalResponse(message, menu);
-
-    if (fallbackResponse) {
-      return res.status(200).json({
-        success: true,
-        ...fallbackResponse,
-        fallback: true,
-      });
-    }
-
-    // Generic safe fallback using only menu items
-    const fallbackItems = Array.isArray(menu)
-      ? menu
-          .filter((item) => item?.id && item?.name)
-          .slice(0, 3)
-      : [];
-
-    return res.status(200).json({
-      success: true,
-      reply:
-        "Gemini is temporarily unavailable, but here are some items you can try from our menu.",
-      recommendations: fallbackItems.map((item) => ({
-        ...item,
-        quantity: 1,
-        reason: "Available from Raj Cafe menu",
-      })),
-      fallback: true,
-    });
-  }
 
   return res.status(500).json({
     success: false,
